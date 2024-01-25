@@ -156,6 +156,19 @@ fn build_driver() -> Driver {
     let firrtl = bld.state("firrtl", &["fir"]);
 
     bld.op(
+        "calyx-to-firrtl",
+        &[calyx_setup],
+        calyx,
+        firrtl,
+        |e, input, output| {
+            e.build_cmd(&[output], "calyx", &[input], &[])?;
+            e.arg("backend", "firrtl")?;
+            e.arg("args", "--emit-primitive-extmodules")?;
+            Ok(())
+        },
+    );
+
+    bld.op(
         "firrtl-with-primitives",
         &[calyx_setup, firrtl_primitives_setup],
         calyx,
