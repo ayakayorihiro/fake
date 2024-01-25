@@ -140,16 +140,42 @@ fn build_driver() -> Driver {
         },
     );
 
+    let firrtl_primitives_setup = bld.setup("FIRRTL with primitives", |e| {
+        e.var(
+            "gen-firrtl-primitives-script",
+            "$calyx_base/tools/firrtl/generate-firrtl-with-primitives.py",
+        )?;
+        e.rule(
+            "generate-firrtl-with-primitives",
+            "python3 $gen-firrtl-primitives-script $in > $out",
+        )?;
+        Ok(())
+    });
+
     // Calyx to FIRRTL.
     let firrtl = bld.state("firrtl", &["fir"]);
+
     bld.op(
-        "calyx-to-firrtl",
-        &[calyx_setup],
+        "firrtl-with-primitives",
+        &[calyx_setup, firrtl_primitives_setup],
         calyx,
         firrtl,
         |e, input, output| {
-            e.build_cmd(&[output], "calyx", &[input], &[])?;
+            let tmp_firrtl = "partial.fir";
+            let tmp_json = "primitive-uses.json";
+            // get original firrtl
+            e.build_cmd(&[tmp_firrtl], "calyx", &[input], &[])?;
             e.arg("backend", "firrtl")?;
+            // get primitive uses json
+            e.build_cmd(&[tmp_json], "calyx", &[input], &[])?;
+            e.arg("backend", "primitive-uses")?;
+            // output whole FIRRTL program
+            e.build_cmd(
+                &[output],
+                "generate-firrtl-with-primitives",
+                &[tmp_firrtl, tmp_json],
+                &[],
+            )?;
             Ok(())
         },
     );
