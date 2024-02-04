@@ -179,9 +179,11 @@ fn build_driver() -> Driver {
             // get original firrtl
             e.build_cmd(&[tmp_firrtl], "calyx", &[input], &[])?;
             e.arg("backend", "firrtl")?;
+            e.arg("args", "-p external")?;
             // get primitive uses json
             e.build_cmd(&[tmp_json], "calyx", &[input], &[])?;
             e.arg("backend", "primitive-uses")?;
+            e.arg("args", "-p external")?;
             // output whole FIRRTL program
             e.build_cmd(
                 &[output],
